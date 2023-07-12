@@ -1,5 +1,5 @@
+import json
 from datetime import datetime
-import pickle
 
 
 class Note:
@@ -11,7 +11,6 @@ class Note:
 
     def set_name(self, new_name):
         self.name = new_name
-
 
     def add_tag(self, tag):
         self.tags.append(tag)
@@ -25,6 +24,14 @@ class Note:
         if tag in self.tags:
             matching_notes.append(self)
         return matching_notes
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "content": self.content,
+            "tags": self.tags,
+            "timestamp": self.timestamp
+        }
 
 
 class NoteBook:
@@ -61,14 +68,16 @@ class NoteBook:
         return matching_notes
 
     def save_notes(self, filename):
-        with open(filename, "wb") as file:
-            pickle.dump(self.notes, file)
-            print ('save is dane ------')
+        notes_data = [note.to_dict() for note in self.notes]
+        with open(filename, "w") as file:
+            json.dump(notes_data, file)
+        print('Notes saved successfully.')
 
     def load_notes(self, filename):
         try:
-            with open(filename, "rb") as file:
-                self.notes = pickle.load(file)
+            with open(filename, "r") as file:
+                notes_data = json.load(file)
+                self.notes = [Note(**data) for data in notes_data]
         except FileNotFoundError:
             self.notes = []
 
@@ -81,12 +90,9 @@ def add_note():
         tags = [tag.strip() for tag in tags.split(",")]
     note = Note(name, content, tags)
     notebook.add_note(note)
-    notebook.save_notes("usernotes.pkl")
+    notebook.save_notes("usernotes.json")
     print("Note added successfully.")
     print("Timestamp:", note.timestamp)
-
-
-
 
 
 def edit_note():
@@ -113,7 +119,7 @@ def delete_note():
     index = int(input("Enter the index of the note to delete: "))
     if 0 <= index < len(notebook.notes):
         notebook.delete_note(index)
-        notebook.save_notes("usernotes.pkl")
+        notebook.save_notes("usernotes.json")
         print("Note deleted successfully.")
     else:
         print("Invalid note index.")
@@ -148,16 +154,16 @@ def search_notes_by_tag():
 
 
 def load_notes():
-    notebook.load_notes("usernotes.pkl")
+    notebook.load_notes("usernotes.json")
 
 def save_notes():
-    notebook.save_notes("usernotes.pkl")
+    notebook.save_notes("usernotes.json")
 
 
 def main():
     global notebook
     notebook = NoteBook()
-    load_notes()
+    notebook.load_notes("usernotes.json")
 
     while True:
         print('Menu:')
